@@ -319,17 +319,24 @@ void AR_WPNav::update_pivot_active_flag()
     const float yaw_cd = _reversed ? wrap_360_cd(_oa_wp_bearing_cd + 18000) : _oa_wp_bearing_cd;
     const float yaw_error = fabsf(wrap_180_cd(yaw_cd - AP::ahrs().yaw_sensor)) * 0.01f;
 
+    uint32_t now = AP_HAL::millis();
+
     // if error is larger than _pivot_angle start pivot steering
-    if (yaw_error > _pivot_angle) {
-        _pivot_active = true;
+    if (yaw_error > _pivot_angle && !_pivot_active_first) {
+        _pivot_active_first = true;
+        _pivot_start_ms = now;
         return;
     }
 
-    uint32_t now = AP_HAL::millis();
-
+    if (_pivot_active_first && now - _pivot_start_ms >= constrain_float(_pivot_delay.get(), 0.0f, 60.0f) * 1000.0f) {
+        _pivot_active = true;
+        _pivot_start_ms = 0;
+    }
+    
     // if within 5 degrees of the target heading, set start time of pivot steering
     if (_pivot_active && yaw_error < AR_WPNAV_PIVOT_ANGLE_ACCURACY && _pivot_start_ms == 0) {
         _pivot_start_ms = now;
+        _pivot_active_first = false;
     }
 
     // exit pivot steering after the time set by pivot_delay has elapsed
@@ -385,6 +392,12 @@ void AR_WPNav::update_steering(const Location& current_loc, float current_speed)
 
         // update flag so that it can be cleared
         update_pivot_active_flag();
+    } else if (_pivot_active_first) {
+        _desired_lat_accel = 0.0f;
+        _desired_turn_rate_rads = 0.0f;
+
+        // update flag so that it can be cleared
+        update_pivot_active_flag();
     } else {
         // run L1 controller
         _nav_controller.set_reverse(_reversed);
@@ -407,10 +420,9 @@ void AR_WPNav::update_steering(const Location& current_loc, float current_speed)
 // have been updated: _oa_wp_bearing_cd, _cross_track_error, _oa_distance_to_destination
 void AR_WPNav::update_desired_speed(float dt)
 {
-    // reduce speed to zero during pivot turns
-    if (_pivot_active) {
-        // decelerate to zero
-        _desired_speed_limited = _atc.get_desired_speed_accel_limited(0.0f, dt);
+    // reduce speed to zero immediately during pivot turns
+    if (_pivot_active || _pivot_active_first) {
+        _desired_speed_limited = 0.0f;
         return;
     }
 

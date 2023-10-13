@@ -133,6 +133,7 @@ private:
     float _turn_radius;             // vehicle turn radius in meters
     bool _pivot_possible;           // true if vehicle can pivot
     bool _pivot_active;             // true if vehicle is currently pivoting
+    bool _pivot_active_first = false;
 
     // variables for navigation
     uint32_t _last_update_ms;       // system time of last call to update
