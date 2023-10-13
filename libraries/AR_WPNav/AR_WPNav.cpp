@@ -92,6 +92,15 @@ const AP_Param::GroupInfo AR_WPNav::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("PIVOT_DELAY", 7, AR_WPNav, _pivot_delay, 0),
 
+    // @Param: RADIUS_MIN
+    // @DisplayName: Waypoint radius minimum
+    // @Description: Same as WP_RADIUS, applied when two waypoints are nearer than 1.5 m 
+    // @Units: m
+    // @Range: 0 100
+    // @Increment: 0.1
+    // @User: Standard
+    AP_GROUPINFO("RADIUS_MIN", 8, AR_WPNav, _radius_min, AR_WPNAV_RADIUS_DEFAULT),
+
     AP_GROUPEND
 };
 
@@ -166,7 +175,7 @@ void AR_WPNav::update(float dt)
     }
 
     // check if vehicle has reached the destination
-    const bool near_wp = _distance_to_destination <= _radius;
+    const bool near_wp = _distance_to_destination <= _radius_actual;
     const bool past_wp = !_oa_active && current_loc.past_interval_finish_line(_origin, _destination);
     if (!_reached_destination && (near_wp || past_wp)) {
        _reached_destination = true;
@@ -207,6 +216,13 @@ bool AR_WPNav::set_desired_location(const struct Location& destination, float ne
     _orig_and_dest_valid = true;
     _reached_destination = false;
     update_distance_and_bearing_to_destination();
+
+    // use WP_RADIUS_NEAR if the distance of waypoint is less than 1.5 m
+    if (_distance_to_destination < 1.5f) {
+        _radius_actual = _radius_min;
+    } else {
+        _radius_actual = _radius;
+    }
 
     // determine if we should pivot immediately
     update_pivot_active_flag();
@@ -401,7 +417,7 @@ void AR_WPNav::update_steering(const Location& current_loc, float current_speed)
     } else {
         // run L1 controller
         _nav_controller.set_reverse(_reversed);
-        _nav_controller.update_waypoint(_reached_destination ? current_loc : _oa_origin, _oa_destination, _radius);
+        _nav_controller.update_waypoint(_reached_destination ? current_loc : _oa_origin, _oa_destination, _radius_actual);
 
         // retrieve lateral acceleration, heading back towards line and crosstrack error
         _desired_lat_accel = constrain_float(_nav_controller.lateral_acceleration(), -_atc.get_turn_lat_accel_max(), _atc.get_turn_lat_accel_max());
