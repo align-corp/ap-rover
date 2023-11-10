@@ -21,7 +21,6 @@ public:
     enum Number : uint8_t {
         MANUAL       = 0,
         ACRO         = 1,
-        CRUISE       = 2,
         STEERING     = 3,
         HOLD         = 4,
         LOITER       = 5,
@@ -31,7 +30,8 @@ public:
         RTL          = 11,
         SMART_RTL    = 12,
         GUIDED       = 15,
-        INITIALISING = 16
+        INITIALISING = 16,
+        CRUISE       = 17
     };
 
     // Constructor
@@ -571,7 +571,7 @@ protected:
 
     bool _enter() override;
     void _exit() override;
-    float _speed;
+    float _speed_input;
 };
 
 
