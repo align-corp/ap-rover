@@ -1,10 +1,8 @@
 #include "mode.h"
 #include "Rover.h"
-#include <GCS_MAVLink/GCS.h>
 
 bool ModeCruise::_enter()
 {
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "Entering Cruise Mode");
     _speed_input = 0;
     return true;
 }
@@ -20,7 +18,7 @@ void ModeCruise::update()
 {
     float steering, throttle, speed;
     get_pilot_input(steering, throttle);
-    _speed_input += throttle * g.cruise_p*0.01f;
+    _speed_input += throttle * g.cruise_p * 0.01f;
 
     // do not reverse and stop immediately if minimum throttle
     if (_speed_input < 0.0f || throttle < -99.0f) {
@@ -34,11 +32,11 @@ void ModeCruise::update()
     // we proportionally reduce steering and _speed_input
     if (g2.motors.have_skid_steering()) {
         const float steer_normalised = constrain_float(steering / 4500.0f, -1.0f, 1.0f);
-        const float _speed_normalised = constrain_float(_speed_input / 100.0f, -1.0f, 1.0f);
-        const float saturation_value = fabsf(steer_normalised) + fabsf(_speed_normalised);
+        const float speed_normalised = constrain_float(speed / 100.0f, -1.0f, 1.0f);
+        const float saturation_value = fabsf(steer_normalised) + fabsf(speed_normalised);
         if (saturation_value > 1.0f) {
             steering /= saturation_value;
-            speed = _speed_input/saturation_value;
+            speed /= saturation_value;
         }
     }
     // check for special case of input and output throttle being in opposite directions
@@ -50,9 +48,7 @@ void ModeCruise::update()
     }
     speed = throttle_limited;
 
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "steering: %f, throttle %f", steering, speed);
-
-    // copy RC scaled inputs to outputs
+    // set outputs
     g2.motors.set_throttle(speed);
     g2.motors.set_steering(steering, false);
 }
