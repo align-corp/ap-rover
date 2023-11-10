@@ -21,6 +21,7 @@ public:
     enum Number : uint8_t {
         MANUAL       = 0,
         ACRO         = 1,
+        CRUISE       = 2,
         STEERING     = 3,
         HOLD         = 4,
         LOITER       = 5,
@@ -546,6 +547,31 @@ public:
 protected:
 
     void _exit() override;
+};
+
+class ModeCruise : public Mode
+{
+public:
+
+    uint32_t mode_number() const override { return CRUISE; }
+    const char *name4() const override { return "CRUI"; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    // attributes for mavlink system status reporting
+    bool has_manual_input() const override { return true; }
+    bool attitude_stabilized() const override { return false; }
+
+    // manual mode does not require position or velocity estimate
+    bool requires_position() const override { return false; }
+    bool requires_velocity() const override { return false; }
+
+protected:
+
+    bool _enter() override;
+    void _exit() override;
+    float _speed;
 };
 
 
