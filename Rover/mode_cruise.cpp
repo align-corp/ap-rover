@@ -11,7 +11,6 @@ void ModeCruise::_exit()
 {
     // clear lateral when exiting manual mode
     g2.motors.set_lateral(0);
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "Exiting Cruise Mode");
 }
 
 void ModeCruise::update()
