@@ -125,6 +125,8 @@ private:
     AP_Int16 _pivot_angle;          // angle error that leads to pivot turn
     AP_Int16 _pivot_rate;           // desired turn rate during pivot turns in deg/sec
     AP_Float _pivot_delay;          // waiting time after pivot turn
+    AP_Float _pivot_delay_in;       // waiting time before pivot turn
+    AP_Float _pivot_accuracy;       // accuracy to declare complete a pivot turn
 
     // references
     AR_AttitudeControl& _atc;       // rover attitude control library
@@ -135,7 +137,8 @@ private:
     float _radius_actual;
     bool _pivot_possible;           // true if vehicle can pivot
     bool _pivot_active;             // true if vehicle is currently pivoting
-    bool _pivot_active_first = false;
+    bool _pivot_active_wait = false;
+    uint8_t _pivot_state = 0;
 
     // variables for navigation
     uint32_t _last_update_ms;       // system time of last call to update

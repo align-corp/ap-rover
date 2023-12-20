@@ -101,6 +101,25 @@ const AP_Param::GroupInfo AR_WPNav::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("RADIUS_MIN", 8, AR_WPNav, _radius_min, AR_WPNAV_RADIUS_DEFAULT),
 
+    // @Param: PIVOT_ACCURACY
+    // @DisplayName: Accuracy of pivot turn
+    // @Description: Angle error to declare pivot turn complete 
+    // @Units: deg
+    // @Range: 1 10
+    // @Increment: 0.1
+    // @User: Standard
+    AP_GROUPINFO("PIVOT_ACC", 9, AR_WPNav, _pivot_accuracy, AR_WPNAV_PIVOT_ANGLE_ACCURACY),
+
+    // @Param: PIVOT_DELAY
+    // @DisplayName: Delay after pivot turn
+    // @Description: Waiting time after pivot turn
+    // @Units: s
+    // @Range: 0 60
+    // @Increment: 0.1
+    // @User: Standard
+    AP_GROUPINFO("PIVOT_DEL_IN", 10, AR_WPNav, _pivot_delay_in, 0),
+
+
     AP_GROUPEND
 };
 
@@ -308,7 +327,7 @@ bool AR_WPNav::get_stopping_location(Location& stopping_loc)
 bool AR_WPNav::use_pivot_steering_at_next_WP(float yaw_error_cd) const
 {
     // check cases where we clearly cannot use pivot steering
-    if (!_pivot_possible || _pivot_angle <= AR_WPNAV_PIVOT_ANGLE_ACCURACY) {
+    if (!_pivot_possible || _pivot_angle <= constrain_float(_pivot_accuracy.get(), 1.0f, 10.0f)) {
         return false;
     }
 
@@ -326,8 +345,9 @@ bool AR_WPNav::use_pivot_steering_at_next_WP(float yaw_error_cd) const
 void AR_WPNav::update_pivot_active_flag()
 {
     // check cases where we clearly cannot use pivot steering
-    if (!_pivot_possible || (_pivot_angle <= AR_WPNAV_PIVOT_ANGLE_ACCURACY)) {
+    if (!_pivot_possible || (_pivot_angle <= constrain_float(_pivot_accuracy.get(), 1.0f, 10.0f))) {
         _pivot_active = false;
+        _pivot_state = 0;
         return;
     }
 
@@ -337,28 +357,47 @@ void AR_WPNav::update_pivot_active_flag()
 
     uint32_t now = AP_HAL::millis();
 
-    // if error is larger than _pivot_angle start pivot steering
-    if (yaw_error > _pivot_angle && !_pivot_active_first) {
-        _pivot_active_first = true;
-        _pivot_start_ms = now;
-        return;
-    }
+    switch (_pivot_state)
+    {
+    case 0:
+        // if error is larger than _pivot_angle start pivot steering
+        if (yaw_error > _pivot_angle) {
+            _pivot_active_wait = true;
+            _pivot_start_ms = now;
+            _pivot_state = 1;
+        }
+        break;
 
-    if (_pivot_active_first && now - _pivot_start_ms >= constrain_float(_pivot_delay.get(), 0.0f, 60.0f) * 1000.0f) {
-        _pivot_active = true;
-        _pivot_start_ms = 0;
-    }
-    
-    // if within 5 degrees of the target heading, set start time of pivot steering
-    if (_pivot_active && yaw_error < AR_WPNAV_PIVOT_ANGLE_ACCURACY && _pivot_start_ms == 0) {
-        _pivot_start_ms = now;
-        _pivot_active_first = false;
-    }
+    case 1:
+        if (now - _pivot_start_ms >= constrain_float(_pivot_delay_in.get(), 0.0f, 60.0f) * 1000.0f) {
+            _pivot_active = true;
+            _pivot_state = 2;
+        }
+        break;
 
-    // exit pivot steering after the time set by pivot_delay has elapsed
-    if (_pivot_start_ms > 0 && now - _pivot_start_ms >= constrain_float(_pivot_delay.get(), 0.0f, 60.0f) * 1000.0f) {
-        _pivot_active = false;
-        _pivot_start_ms = 0;
+    case 2:
+        // if within 5 degrees of the target heading, set start time of pivot steering
+        if (yaw_error < constrain_float(_pivot_accuracy.get(), 1.0f, 10.0f)) {
+            _pivot_start_ms = now;
+            _pivot_active_wait = true;
+            _pivot_active = false;
+            _pivot_state = 3;
+        }
+        break;
+
+    case 3:
+        // exit pivot steering after the time set by pivot_delay has elapsed
+        if (now - _pivot_start_ms >= constrain_float(_pivot_delay.get(), 0.0f, 60.0f) * 1000.0f) {
+            _pivot_active_wait = false;
+            _pivot_active = false;
+            _pivot_state = 0;
+            // relax i terms
+            _atc.relax_I();
+        }
+        break;
+
+    default:
+        break;
     }
 }
 
@@ -408,7 +447,7 @@ void AR_WPNav::update_steering(const Location& current_loc, float current_speed)
 
         // update flag so that it can be cleared
         update_pivot_active_flag();
-    } else if (_pivot_active_first) {
+    } else if (_pivot_active_wait) {
         _desired_lat_accel = 0.0f;
         _desired_turn_rate_rads = 0.0f;
 
@@ -437,7 +476,7 @@ void AR_WPNav::update_steering(const Location& current_loc, float current_speed)
 void AR_WPNav::update_desired_speed(float dt)
 {
     // reduce speed to zero immediately during pivot turns
-    if (_pivot_active || _pivot_active_first) {
+    if (_pivot_active || _pivot_active_wait) {
         _desired_speed_limited = 0.0f;
         return;
     }
