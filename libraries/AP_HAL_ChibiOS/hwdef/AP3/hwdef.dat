@@ -165,6 +165,3 @@ define HAL_BOARD_TERRAIN_DIRECTORY "/APM/TERRAIN"
 
 DMA_PRIORITY USART1_RX SPI1*
 DMA_NOSHARE  SPI1*
-
-# default parameters
-env DEFAULT_PARAMETERS 'Tools/Frame_params/Align_GA22.param'
