@@ -1,0 +1,4 @@
+include ../AP6/hwdef.dat
+
+# default parameters
+env DEFAULT_PARAMETERS 'Tools/Frame_params/Align_GA45.param'
