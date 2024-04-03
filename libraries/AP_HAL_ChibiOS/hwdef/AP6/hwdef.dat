@@ -1,6 +1,12 @@
 # hw definition file for processing by chibios_hwdef.py
 # for AP6 hardware
 
+# define AP6 frames
+define ALIGN_GA22_DEV   0x02800000
+define ALIGN_GA22       0x02800001
+define ALIGN_GA45_DEV   0x02810000
+define ALIGN_GA45       0x02810001
+
 # USB setup (future use)
 USB_VENDOR 0x2A58 # ALIGN Corporation Limited
 USB_PRODUCT 0xA002 # AP6
