@@ -1,4 +1,13 @@
 include ../AP3/hwdef.dat
 
+# defines
+define ALIGN_FRAME ALIGN_GA45
+define PARAM_READONLY
+
+# USB setup
+USB_VENDOR 0x2A58 # ALIGN Corporation Limited
+USB_PRODUCT 0xA001 # AP3
+USB_STRING_MANUFACTURER "ALIGN"
+
 # default parameters
-env DEFAULT_PARAMETERS 'Tools/Frame_params/Align_GA45.param'
+env DEFAULT_PARAMETERS 'Tools/Frame_params/Align_GA22_RW.param'

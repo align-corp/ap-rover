@@ -4,7 +4,8 @@
 set -e
 
 # specify boards
-BOARDS="AP3-GA22 AP3-GA45 AP3-GA80"
+BOARDS="AP3-GA22 AP3-GA22-dev AP3-GA45 AP3-GA45-dev "
+BOARDS+="AP6-GA22 AP6-GA22-dev AP6-GA45 AP6-GA45-dev "
 
 # prepare align-build folder
 if [ -d "align-build" ]; then
@@ -14,7 +15,7 @@ mkdir align-build
 
 # compile
 for b in $BOARDS; do
-    echo "Testing $b build"
+    echo "Building $b"
     ./waf configure --board $b
     ./waf clean
     ./waf rover
