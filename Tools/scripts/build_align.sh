@@ -6,6 +6,7 @@ set -e
 # specify boards
 BOARDS="AP3-GA22 AP3-GA22-dev AP3-GA45 AP3-GA45-dev "
 BOARDS+="AP6-GA22 AP6-GA22-dev AP6-GA45 AP6-GA45-dev "
+BOARDS+="AP6v2-GA22 AP6v2-GA22-dev AP6v2-GA45 AP6v2-GA45-dev "
 
 # prepare align-build folder
 if [ -d "align-build" ]; then
@@ -23,5 +24,6 @@ for b in $BOARDS; do
 done
 
 echo "align builds completed"
+say align builds completed
 
 exit 0

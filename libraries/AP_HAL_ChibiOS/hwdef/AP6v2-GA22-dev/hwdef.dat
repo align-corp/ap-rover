@@ -1,0 +1,7 @@
+include ../AP6v2/hwdef.dat
+
+# defines
+define ALIGN_FRAME ALIGN_GA22_DEV
+
+# default parameters
+env DEFAULT_PARAMETERS 'Tools/Frame_params/Align_GA22.param'
