@@ -345,7 +345,7 @@ bool AR_WPNav::use_pivot_steering_at_next_WP(float yaw_error_cd) const
 void AR_WPNav::update_pivot_active_flag()
 {
     // check cases where we clearly cannot use pivot steering
-    if (!_pivot_possible || (_pivot_angle <= constrain_float(_pivot_accuracy.get(), 1.0f, 10.0f))) {
+    if (!_pivot_possible || (_pivot_angle <= constrain_float(_pivot_accuracy.get(), 1.0f, 30.0f))) {
         _pivot_active = false;
         _pivot_state = 0;
         return;
