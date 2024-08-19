@@ -103,7 +103,24 @@ int lua_scripts::atpanic(lua_State *L) {
 }
 
 lua_scripts::script_info *lua_scripts::load_script(lua_State *L, char *filename) {
-    if (int error = luaL_loadfile(L, filename)) {
+    // try RETRY_LOAD_SCRIPT times to load script to avoid error when loading scripts from ROMFS
+    int error;
+    uint8_t error_count = 0;
+    while (true) {
+        error_count++;
+        error = luaL_loadfile(L, filename);
+        if (!error || error_count == 5) {
+            break;
+        }
+        // wait 500 ms and try again
+        lua_pop(L, lua_gettop(L));
+        GCS_SEND_TEXT(MAV_SEVERITY_NOTICE, "Lua: error loading script, try %d", error_count);
+        hal.scheduler->delay(500);
+    } 
+
+    if (error) {
+        // if I'm still here an error occurred RETRY_LOAD_SCRIPT times
+        // call set_and_print_new_error_message to signal error to user and prevent arming
         switch (error) {
             case LUA_ERRSYNTAX:
                 set_and_print_new_error_message(MAV_SEVERITY_CRITICAL, "Error: %s", lua_tostring(L, -1));
