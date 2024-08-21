@@ -1,4 +1,4 @@
--- emergency stop, starter and fuel check for Align mower - version 2.1
+-- emergency stop, starter and fuel check for Align mower - version 2.2
 local MILLIS_UPDATE = 100
 local START_PIN = 57
 local FUEL_PIN = 58
@@ -49,8 +49,6 @@ local STARTER_OFF_VIBE = 3
 local STARTER_ON_VIBE = 4
 local STARTER_ON_TIMEOUT_LONG = 5
 local STARTER_OFF_TIMEOUT_LONG = 6
-local STARTER_ON_THR_LOW = 8
-local STARTER_OFF_THR_LOW = 9
 local STARTER_INIT = -1
 local eng_ch = 0
 local fuel_state = -1
@@ -110,11 +108,6 @@ if starter_count == STARTER_TIMEOUT_LONG_COUNT then
 starter_state = STARTER_ON_TIMEOUT_LONG
 if ENG_DEBUG:get() > 1 then
 gcs:send_text('6', "Starter TIMEOUT LONG")
-end
-elseif ENG_THR_RC:get() > 3 and rc:get_pwm(ENG_THR_RC:get()) < 1750 then
-starter_state = STARTER_ON_THR_LOW
-if ENG_DEBUG:get() > 1 then
-gcs:send_text('6', "Starter ON THR LOW")
 end
 else
 gpio:write(START_PIN, start_on)
@@ -223,25 +216,6 @@ gcs:send_text('6', "Starter ON TIMEOUT LONG")
 end
 elseif millis() - starter_on_ms > STARTER_TIMEOUT_LONG_MS then
 starter_count = 0
-starter_state = STARTER_OFF
-if ENG_DEBUG:get() > 1 then
-gcs:send_text('6', "Starter OFF")
-end
-end
-elseif starter_state == STARTER_ON_THR_LOW then
-if rc:get_pwm(eng_ch) < 1800 then
-starter_state = STARTER_OFF_THR_LOW
-if ENG_DEBUG:get() > 1 then
-gcs:send_text('6', "Starter OFF THR LOW")
-end
-end
-elseif starter_state == STARTER_OFF_THR_LOW then
-if rc:get_pwm(eng_ch) > 1850 then
-starter_state = STARTER_ON_THR_LOW
-if ENG_DEBUG:get() > 1 then
-gcs:send_text('6', "Starter ON THR LOW")
-end
-elseif rc:get_pwm(ENG_THR_RC:get()) > 1800 then
 starter_state = STARTER_OFF
 if ENG_DEBUG:get() > 1 then
 gcs:send_text('6', "Starter OFF")
