@@ -4,6 +4,7 @@ include ../AP3/hwdef.dat
 define ALIGN_FRAME ALIGN_GA45_DEV
 
 # ADC - BATT monitor
+undef HAL_USE_ADC
 undef PB1
 PB1 BATT_VOLTAGE_SENS ADC1 SCALE(1) # pin 5 - PWM 5
 
